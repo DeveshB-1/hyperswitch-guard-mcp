@@ -1,0 +1,27 @@
+MCP tools exposed: create_refund, get_payment, list_payments, list_refunds, preview_refund
+
+[agent] get_payment pay_demo_001
+        -> succeeded Rs 2,500.00; hidden from the model: billing, client_secret, customer, customer_id, email, merchant_id, name, payment_method_data, phone
+[agent] refund pay_demo_001, no amount given
+        -> denied: amount is required: Hyperswitch refunds the FULL payment amount when it is omitted
+[agent] refund Rs 500 on pay_demo_001
+        -> refunded
+[agent] same Rs 500 refund again (agent retry)
+        -> already_refunded
+[agent] refund Rs 2,500 on pay_demo_001 (only Rs 2,000 left)
+        -> denied: amount 250000 exceeds remaining refundable 200000
+[agent] refund 2000 'INR' on a USD payment
+        -> denied: currency mismatch: request says 'INR', payment is 'USD'
+[agent] refund an unpaid checkout
+        -> denied: payment status 'requires_payment_method' is not refundable
+[agent] refund Rs 8,000 on pay_demo_002
+        -> pending_human_approval: amount 800000 is above the auto-approve limit 500000 INR; queued for a human
+[human] hsguard approve agt_b22e0446a07edbdcef50a14e
+        -> refunded
+[agent] another Rs 3,000 refund the same day
+        -> denied: daily agent refund budget exceeded: 850000 already used of 1000000 INR
+
+Audit log: ok: 10 entries, head 75c4eae4e44b
+Tampered copy: chain broken at entry 3
+
+Summary: {"agent_refund_requests": 8, "executed": 2, "denied": 5, "queued_for_human": 1, "duplicate_requests_sent_on_retry": 0, "hyperswitch_refund_calls": 2, "audit_ok": true, "tamper_detected": true}
